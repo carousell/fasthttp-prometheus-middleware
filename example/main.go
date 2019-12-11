@@ -18,6 +18,6 @@ func main() {
 		ctx.SetBody([]byte(`{"status": "pass"}`))
 	})
 
-	log.Println("main is listening on ", "80")
-	log.Fatal(fasthttp.ListenAndServe(":"+"80", r.Handler))
+	log.Println("main is listening on ", "8080")
+	log.Fatal(fasthttp.ListenAndServe(":"+"8080", r.Handler))
 }
