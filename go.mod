@@ -1,4 +1,4 @@
-module fasthttpprom
+module github.com/701search/fasthttp-prometheus-middleware
 
 go 1.13
 
