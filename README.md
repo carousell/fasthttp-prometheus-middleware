@@ -1,9 +1,10 @@
-# fasthttp-prometheus-middleware
+# fasthttp prometheus-middleware
 Fasthttp [fasthttp](https://github.com/valyala/fasthttp) middleware for Prometheus
 
 Export metrics for request duration ```request_duration``` and request count ```request_count```
 
 ## Example 
+using fasthttp/router
 
     package main
 
