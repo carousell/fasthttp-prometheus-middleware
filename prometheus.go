@@ -115,8 +115,8 @@ func (p *Prometheus) Use(r *router.Router) {
 func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 	p.router.GET(p.MetricsPath, prometheusHandler())
 	return func(ctx *fasthttp.RequestCtx) {
-		if ctx.Request.URI().String() == p.MetricsPath {
-			//p.router.Handler(ctx)
+		if string(ctx.Request.URI().Path()) == p.MetricsPath {
+			p.router.Handler(ctx)
 			return
 		}
 
