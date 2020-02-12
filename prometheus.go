@@ -106,14 +106,17 @@ func (p *Prometheus) registerMetrics(subsystem string) {
 // Use adds the middleware to a fasthttp
 func (p *Prometheus) Use(r *router.Router) {
 	p.router = r
-	p.HandlerFunc()
 	p.SetMetricsPath(r)
+	p.HandlerFunc()
+
 }
 
 // HandlerFunc defines handler function for middleware
 func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
+	p.router.GET(p.MetricsPath, prometheusHandler())
 	return func(ctx *fasthttp.RequestCtx) {
 		if ctx.Request.URI().String() == p.MetricsPath {
+			//p.router.Handler(ctx)
 			return
 		}
 
