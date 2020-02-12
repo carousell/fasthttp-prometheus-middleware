@@ -13,18 +13,17 @@ import (
 
 var defaultMetricPath = "/metrics"
 
-// RequestCounterURLLabelMappingFn url label
-type RequestCounterURLLabelMappingFn func(c *fasthttp.RequestCtx) string
+// ListenerHandler url label
+type ListenerHandler func(c *fasthttp.RequestCtx) string
 
 // Prometheus contains the metrics gathered by the instance and its path
 type Prometheus struct {
-	reqCnt                  *prometheus.CounterVec
-	reqDur                  *prometheus.HistogramVec
-	router                  *router.Router
-	listenAddress           string
-	MetricsPath             string
-	ReqCntURLLabelMappingFn RequestCounterURLLabelMappingFn
-	URLLabelFromContext     string
+	reqCnt        *prometheus.CounterVec
+	reqDur        *prometheus.HistogramVec
+	router        *router.Router
+	listenAddress string
+	MetricsPath   string
+	Handler       fasthttp.RequestHandler
 }
 
 // NewPrometheus generates a new set of metrics with a certain subsystem name
@@ -32,11 +31,7 @@ func NewPrometheus(subsystem string) *Prometheus {
 
 	p := &Prometheus{
 		MetricsPath: defaultMetricPath,
-		ReqCntURLLabelMappingFn: func(c *fasthttp.RequestCtx) string {
-			return c.Request.URI().String() // i.e. by default do nothing, i.e. return URI
-		},
 	}
-
 	p.registerMetrics(subsystem)
 
 	return p
@@ -60,11 +55,11 @@ func (p *Prometheus) SetListenAddressWithRouter(listenAddress string, r *router.
 	}
 }
 
-// SetMetricsPath set metrics paths
+// SetMetricsPath set metrics paths for Custom path
 func (p *Prometheus) SetMetricsPath(r *router.Router) {
 
 	if p.listenAddress != "" {
-		p.router.GET(p.MetricsPath, prometheusHandler())
+		r.GET(p.MetricsPath, prometheusHandler())
 		p.runServer()
 	} else {
 		r.GET(p.MetricsPath, prometheusHandler())
@@ -103,35 +98,43 @@ func (p *Prometheus) registerMetrics(subsystem string) {
 
 }
 
+// Custom adds the middleware to a fasthttp
+func (p *Prometheus) Custom(r *router.Router) {
+	p.router = r
+	p.SetMetricsPath(r)
+	p.Handler = p.HandlerFunc()
+}
+
 // Use adds the middleware to a fasthttp
 func (p *Prometheus) Use(r *router.Router) {
 	p.router = r
-	p.SetMetricsPath(r)
-	p.HandlerFunc()
-
+	r.GET(p.MetricsPath, prometheusHandler())
+	p.Handler = p.HandlerFunc()
 }
 
-// HandlerFunc defines handler function for middleware
+// HandlerFunc is onion or wraper to handler for fasthttp listenandserve
 func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
-	p.router.GET(p.MetricsPath, prometheusHandler())
 	return func(ctx *fasthttp.RequestCtx) {
-		if string(ctx.Request.URI().Path()) == p.MetricsPath {
+		uri := string(ctx.Request.URI().Path())
+		if uri == p.MetricsPath {
+			// next
 			p.router.Handler(ctx)
 			return
 		}
 
 		start := time.Now()
-		//c.Next()
+		// next
 		p.router.Handler(ctx)
 
 		status := strconv.Itoa(ctx.Response.StatusCode())
 		elapsed := float64(time.Since(start)) / float64(time.Second)
-
-		p.reqDur.WithLabelValues(status, string(ctx.Method())+"_"+ctx.URI().String()).Observe(elapsed)
-		p.reqCnt.WithLabelValues(status, string(ctx.Method())+"_"+ctx.URI().String()).Inc()
+		ep := string(ctx.Method()) + "_" + uri
+		p.reqDur.WithLabelValues(status, ep).Observe(elapsed)
+		p.reqCnt.WithLabelValues(status, ep).Inc()
 	}
 }
 
+// since prometheus/client_golang use net/http we need this net/http adapter for fasthttp
 func prometheusHandler() fasthttp.RequestHandler {
 	return fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
 }
