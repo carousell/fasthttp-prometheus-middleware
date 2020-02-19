@@ -18,7 +18,6 @@ type ListenerHandler func(c *fasthttp.RequestCtx) string
 
 // Prometheus contains the metrics gathered by the instance and its path
 type Prometheus struct {
-	reqCnt        *prometheus.CounterVec
 	reqDur        *prometheus.HistogramVec
 	router        *router.Router
 	listenAddress string
@@ -28,7 +27,6 @@ type Prometheus struct {
 
 // NewPrometheus generates a new set of metrics with a certain subsystem name
 func NewPrometheus(subsystem string) *Prometheus {
-
 	p := &Prometheus{
 		MetricsPath: defaultMetricPath,
 	}
@@ -57,7 +55,6 @@ func (p *Prometheus) SetListenAddressWithRouter(listenAddress string, r *router.
 
 // SetMetricsPath set metrics paths for Custom path
 func (p *Prometheus) SetMetricsPath(r *router.Router) {
-
 	if p.listenAddress != "" {
 		r.GET(p.MetricsPath, prometheusHandler())
 		p.runServer()
@@ -73,16 +70,6 @@ func (p *Prometheus) runServer() {
 }
 
 func (p *Prometheus) registerMetrics(subsystem string) {
-
-	p.reqCnt = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Subsystem: subsystem,
-			Name:      "request_count",
-			Help:      "Number of request",
-		},
-		[]string{"code", "path"},
-	)
-
 	p.reqDur = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Subsystem: subsystem,
@@ -93,9 +80,7 @@ func (p *Prometheus) registerMetrics(subsystem string) {
 		[]string{"code", "path"},
 	)
 
-	prometheus.Register(p.reqCnt)
 	prometheus.Register(p.reqDur)
-
 }
 
 // Custom adds the middleware to a fasthttp
@@ -130,7 +115,6 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 		elapsed := float64(time.Since(start)) / float64(time.Second)
 		ep := string(ctx.Method()) + "_" + uri
 		p.reqDur.WithLabelValues(status, ep).Observe(elapsed)
-		p.reqCnt.WithLabelValues(status, ep).Inc()
 	}
 }
 
