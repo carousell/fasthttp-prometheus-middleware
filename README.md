@@ -11,7 +11,7 @@ using fasthttp/router
     import (
 	"log"
 
-	fasthttpprom "github.com/701search/fasthttp-prometheus-middleware"
+	fasthttpprom "github.com/carousell/fasthttp-prometheus-middleware"
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 	)
