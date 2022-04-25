@@ -1,6 +1,7 @@
 package fasthttpprom
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -23,6 +24,7 @@ type Prometheus struct {
 	listenAddress string
 	MetricsPath   string
 	Handler       fasthttp.RequestHandler
+	groupPath	  bool
 }
 
 // NewPrometheus generates a new set of metrics with a certain subsystem name
@@ -33,6 +35,10 @@ func NewPrometheus(subsystem string) *Prometheus {
 	p.registerMetrics(subsystem)
 
 	return p
+}
+
+func (p *Prometheus) SetPathGrouping(enabled bool) {
+	p.groupPath = enabled
 }
 
 // SetListenAddress for exposing metrics on address. If not set, it will be exposed at the
@@ -77,7 +83,7 @@ func (p *Prometheus) registerMetrics(subsystem string) {
 			Help:      "request latencies",
 			Buckets:   []float64{.005, .01, .02, 0.04, .06, 0.08, .1, 0.15, .25, 0.4, .6, .8, 1, 1.5, 2, 3, 5},
 		},
-		[]string{"code", "path"},
+		[]string{"code", "path", "method"},
 	)
 
 	prometheus.Register(p.reqDur)
@@ -113,8 +119,12 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 
 		status := strconv.Itoa(ctx.Response.StatusCode())
 		elapsed := float64(time.Since(start)) / float64(time.Second)
-		ep := string(ctx.Method()) + "_" + uri
-		p.reqDur.WithLabelValues(status, ep).Observe(elapsed)
+		if p.groupPath == true {
+			uri = fmt.Sprintf("%v", ctx.UserValue(router.MatchedRoutePathParam))
+		}
+		ep := uri
+		method := string(ctx.Method())
+		p.reqDur.WithLabelValues(status, ep, method).Observe(elapsed)
 	}
 }
 
