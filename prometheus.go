@@ -1,6 +1,7 @@
 package fasthttpprom
 
 import (
+	"log"
 	"strconv"
 	"time"
 
@@ -114,7 +115,12 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 		status := strconv.Itoa(ctx.Response.StatusCode())
 		elapsed := float64(time.Since(start)) / float64(time.Second)
 		ep := string(ctx.Method()) + "_" + uri
-		p.reqDur.WithLabelValues(status, ep).Observe(elapsed)
+		ob, err := p.reqDur.GetMetricWithLabelValues(status, ep)
+		if err != nil {
+			log.Printf("Fail to GetMetricWithLabelValues: %s\n", err)
+			return
+		}
+		ob.Observe(elapsed)
 	}
 }
 
