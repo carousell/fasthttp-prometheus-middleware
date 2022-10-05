@@ -114,7 +114,18 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 
 		status := strconv.Itoa(ctx.Response.StatusCode())
 		elapsed := float64(time.Since(start)) / float64(time.Second)
+		// get route pattern of url
+		routeList := p.router.List()
+		paths, ok := routeList[string(ctx.Request.Header.Method())]
+		if ok {
+			for _, v := range paths {
+				if handler, _ := p.router.Lookup(string(ctx.Request.Header.Method()), v, ctx); handler != nil {
+					uri = v
+				}
+			}
+		}
 		ep := string(ctx.Method()) + "_" + uri
+		log.Printf("Value prometheus send to grafana: %s\n", ep)
 		ob, err := p.reqDur.GetMetricWithLabelValues(status, ep)
 		if err != nil {
 			log.Printf("Fail to GetMetricWithLabelValues: %s\n", err)
