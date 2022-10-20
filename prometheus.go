@@ -1,6 +1,7 @@
 package fasthttpprom
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -107,7 +108,6 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 			p.router.Handler(ctx)
 			return
 		}
-
 		start := time.Now()
 		// next
 		p.router.Handler(ctx)
@@ -117,10 +117,13 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 		// get route pattern of url
 		routeList := p.router.List()
 		paths, ok := routeList[string(ctx.Request.Header.Method())]
+		handler, _ := p.router.Lookup(string(ctx.Request.Header.Method()), uri, ctx)
 		if ok {
 			for _, v := range paths {
-				if handler, _ := p.router.Lookup(string(ctx.Request.Header.Method()), v, ctx); handler != nil {
+				tmp, _ := p.router.Lookup(string(ctx.Request.Header.Method()), v, ctx)
+				if fmt.Sprintf("%v", tmp) == fmt.Sprintf("%v", handler) {
 					uri = v
+					break
 				}
 			}
 		}
