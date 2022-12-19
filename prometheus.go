@@ -128,7 +128,6 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 			}
 		}
 		ep := string(ctx.Method()) + "_" + uri
-		log.Printf("Value prometheus send to grafana: %s\n", ep)
 		ob, err := p.reqDur.GetMetricWithLabelValues(status, ep)
 		if err != nil {
 			log.Printf("Fail to GetMetricWithLabelValues: %s\n", err)
