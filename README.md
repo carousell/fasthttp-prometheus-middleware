@@ -1,7 +1,9 @@
 # fasthttp prometheus-middleware
-Fasthttp [fasthttp](https://github.com/valyala/fasthttp) middleware for Prometheus
+Prometheus middleware for [fasthttp](https://github.com/valyala/fasthttp) 
 
-Export metrics for request duration ```request_duration_seconds```
+Exports metrics for request duration ```request_duration_seconds``` 
+with http status code as ```code``` and http request method + endpoint/route as ```path``` 
+f.e ```code="200",path="GET_/health"```, ```code="201",path="POST_/foo"``` 
 
 ## Example 
 using fasthttp/router
