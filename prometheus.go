@@ -25,6 +25,7 @@ type Prometheus struct {
 	listenAddress string
 	MetricsPath   string
 	Handler       fasthttp.RequestHandler
+	addHttpMethod bool
 }
 
 // NewPrometheus generates a new set of metrics with a certain subsystem name
@@ -63,6 +64,11 @@ func (p *Prometheus) SetMetricsPath(r *router.Router) {
 	} else {
 		r.GET(p.MetricsPath, prometheusHandler())
 	}
+}
+
+// AddHttpMethod this will add a separate entry for http method. and remove method from path
+func (p *Prometheus) AddHttpMethod(b bool) {
+	p.addHttpMethod = b
 }
 
 func (p *Prometheus) runServer() {
