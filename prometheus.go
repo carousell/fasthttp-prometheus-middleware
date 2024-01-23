@@ -127,7 +127,12 @@ func (p *Prometheus) HandlerFunc() fasthttp.RequestHandler {
 				}
 			}
 		}
-		ep := string(ctx.Method()) + "_" + uri
+		ep := ""
+		if status == "404" {
+			ep = "404_" + string(ctx.Method())
+		} else {
+			ep = string(ctx.Method()) + "_" + uri
+		}
 		ob, err := p.reqDur.GetMetricWithLabelValues(status, ep)
 		if err != nil {
 			log.Printf("Fail to GetMetricWithLabelValues: %s\n", err)
